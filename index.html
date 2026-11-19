@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#10131d">
+<meta name="description" content="ProofofID: daily proof-of-work badges for Binance Agent ID holders on BNB Chain. No token, no custody, no promises.">
+<meta property="og:title" content="ProofofID — Proof of Work bound to your Agent ID">
+<meta property="og:description" content="Solve a daily nonce challenge, sign an EIP-712 attestation, anchor it on-chain. Soulbound proof badge, no token.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://appleadlhapel.github.io/proofofid/">
+<meta name="twitter:card" content="summary_large_image">
+<title>ProofofID — Proof of Work for Agent ID holders</title>
+<style>
+:root{color-scheme:dark;--bg:#10131d;--panel:#191e2c;--ink:#f5f5fa;--muted:#a4acc1;--line:rgba(255,255,255,.1);--lime:#d3ff67;--purple:#a78bfa;--radius:20px}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 75% 5%,rgba(121,92,211,.18),transparent 32%),var(--bg);font:15px/1.55 Inter,ui-sans-serif,system-ui,sans-serif;color:var(--ink)}
+button{font:inherit;color:inherit}input{font:inherit}
+.wrap{width:min(920px,calc(100% - 40px));margin:auto;padding:42px 0 60px}
+.hero{text-align:center;margin-bottom:30px}
+.logo{font-size:15px;font-weight:800;letter-spacing:.14em;color:var(--lime)}
+h1{font-size:clamp(36px,6vw,56px);letter-spacing:-.04em;line-height:1.05;margin:18px 0 12px}
+h1 span{color:var(--lime)}
+.lead{color:var(--muted);max-width:560px;margin:auto}
+.card{border:1px solid var(--line);border-radius:var(--radius);background:var(--panel);padding:22px 24px;margin-bottom:18px}
+.card h2{font-size:16px;margin:0 0 6px}
+.card p{color:var(--muted);font-size:13px;margin:0 0 14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.btn{border:0;border-radius:12px;padding:11px 18px;font-weight:700;cursor:pointer;background:var(--lime);color:#151a20}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.kv{font-family:ui-monospace,Menlo,monospace;font-size:12px;word-break:break-all;background:#0d1020;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:8px 0;color:#c8d0e4}
+.status{font-size:13px;margin-top:10px;color:var(--muted)}
+.status.ok{color:var(--lime)}.status.err{color:#ff8f8f}
+.badge{display:inline-flex;align-items:center;gap:7px;border:1px solid #d3ff6740;color:var(--lime);background:#d3ff6710;padding:5px 11px;border-radius:999px;font-size:11px;font-weight:700;letter-spacing:.06em}
+.badge.off{border-color:var(--line);color:var(--muted);background:transparent}
+.log{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:#0d1020;border:1px solid var(--line);border-radius:10px;padding:12px;min-height:64px;max-height:180px;overflow:auto;white-space:pre-wrap;color:#c8d0e4;margin-top:12px}
+.steps{margin:14px 0 0;padding-left:20px;color:var(--muted);font-size:13px}
+.steps b{color:var(--ink)}
+.share a{color:var(--lime)}
+.footer{color:var(--muted);font-size:12px;text-align:center;margin-top:34px}
+@media(max-width:560px){.wrap{width:calc(100% - 28px)}.row .btn{flex:1}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="logo">PROOFOFID</div>
+    <h1>Proof of work, <span>bound to your Agent ID.</span></h1>
+    <p class="lead">Selesaikan challenge nonce harian di browser, tanda tangani atestasi EIP-712, dan kunci sebagai badge soulbound on-chain di BNB Chain. Tanpa token tradable, tanpa kustodi dana.</p>
+  </header>
+
+  <!-- LANGKAH 1: wallet + cek Agent ID -->
+  <section class="card">
+    <h2>Langkah 1 — Hubungkan wallet &amp; cek Agent ID</h2>
+    <p>Kontrak memeriksa <code>AgentID.balanceOf(address) &gt; 0</code> sebelum menerima atestasi. Daftar Agent ID bawaan Binance: Binance App &gt; Wallet &gt; banner Agent ID.</p>
+    <div class="row">
+      <button class="btn" id="connectBtn">Hubungkan wallet</button>
+      <button class="btn ghost" id="checkBtn" disabled>Cek Agent ID</button>
+      <span class="badge off" id="agentBadge">belum terhubung</span>
+    </div>
+    <div class="kv" id="addrBox">alamat: —</div>
+    <div class="status" id="agentStatus">Belum ada wallet yang terhubung.</div>
+    <div class="kv" id="statsBox">streak: — · total proofs: — · badge: —</div>
+  </section>
+
+  <!-- LANGKAH 2: PoW -->
+  <section class="card">
+    <h2>Langkah 2 — Selesaikan challenge PoW hari ini</h2>
+    <p>Challenge diturunkan dari alamat + nomor hari. Mining jalan di Web Worker agar halaman tetap responsif.</p>
+    <div class="kv" id="challengeBox">challenge: —</div>
+    <div class="row">
+      <button class="btn" id="mineBtn" disabled>Mulai mining</button>
+      <button class="btn ghost" id="stopBtn" disabled>Berhenti</button>
+      <span class="status" id="mineStatus">nonce: —</span>
+    </div>
+  </section>
+
+  <!-- LANGKAH 3: sign + submit -->
+  <section class="card">
+    <h2>Langkah 3 — Tanda tangani &amp; kirim on-chain</h2>
+    <p>Tanda tangan memakai EIP-712 typed data (didukung Agentic Wallet; plain-text signing TIDAK didukung). Lalu panggil <code>attest(dayNumber, nonce, signature)</code>.</p>
+    <div class="row">
+      <button class="btn" id="signBtn" disabled>Tanda tangani atestasi (EIP-712)</button>
+      <button class="btn" id="submitBtn" disabled>Kirim on-chain</button>
+    </div>
+    <div class="status" id="submitStatus">—</div>
+  </section>
+
+  <!-- SHARE -->
+  <section class="card share">
+    <h2>Bagikan</h2>
+    <p>Badge soulbound kamu tidak bisa dipindah. Bagikan tautan dApp ini dan ajak holder lain ikut mengattestasi.</p>
+    <div class="row">
+      <button class="btn ghost" id="copyBtn">Salin tautan</button>
+      <a class="btn ghost" id="xBtn" href="#" target="_blank" rel="noopener" style="text-decoration:none">Bagikan ke X</a>
+      <a class="btn ghost" id="bscBtn" href="#" target="_blank" rel="noopener" style="text-decoration:none">Lihat kontrak di BscScan</a>
+    </div>
+    <div class="status" id="shareStatus"></div>
+  </section>
+
+  <section class="card">
+    <h2>Keamanan</h2>
+    <ol class="steps">
+      <li><b>Tidak pernah minta seed phrase, private key, pairing code, atau login QR.</b> Situs ini tidak punya sesi login.</li>
+      <li>Setiap transaksi tetap butuh konfirmasi dari wallet kamu sendiri.</li>
+      <li>Kontrak tidak menyimpan dana, tidak punya token tradable, tidak menjanjikan return.</li>
+      <li>Izin owner terdokumentasi: <code>setDifficulty</code> (PoWAttestor) dan <code>setBaseURI</code> (ProofBadge).</li>
+    </ol>
+  </section>
+
+  <div class="log" id="log">log aktivitas…</div>
+
+  <footer class="footer">
+    ProofofID · dibangun untuk Agent ID Hackathon (Binance Wallet × BNB Chain) ·
+    <a href="https://www.binance.com/en/support/announcement/detail/95f5dbe0ea674a48a739b59e046648bf" style="color:var(--muted)">pengumuman resmi</a> ·
+    dokumentasi Agentic Wallet: <a href="https://web3.binance.com/en/dev-docs/products/agentic-wallet/introduction" style="color:var(--muted)">web3.binance.com</a>
+  </footer>
+</div>
+
+<script type="module">
+import { createWalletClient, createPublicClient, custom, http, encodeAbiParameters, keccak256, parseAbi } from "https://esm.sh/viem@2";
+
+// ===================== KONFIGURASI =====================
+// Alamat di bawah ini adalah alamat CREATE2 yang sudah dihitung duluan
+// (Safe Singleton Factory, salt keccak256("ProofofID-ProofBadge-v1") /
+// "ProofofID-PoWAttestor-v1"). Sampai kontraknya benar-benar ter-deploy,
+// halaman jalan dalam mode demo (tanpa kirim tx).
+const CONFIG = {
+  agentId: "0x60b9262456de011f7d15a54cdd8c48baaa8b022f", // SPACE ID Agent ID, BNB Chain
+  attestor: "0x80F0c0Dd369C073E8C780c55B7F86Cb622474992", // PoWAttestor (CREATE2, belum deploy)
+  badge: "0x1c4c510B43Ef96189A4b0777202D1E85367Ba717",    // ProofBadge (CREATE2, belum deploy)
+  chainId: 56, // BSC mainnet
+  deployed: true, // kontrak live + terverifikasi on-chain 2026-11-19 (badge #1 minted)
+  rpc: "https://bsc-dataseed.binance.org",
+  bscscan: "https://bscscan.com",
+  difficulty: 16, // harus sama dgn nilai di kontrak; baca ulang via publicClient di bawah jika sudah live
+};
+
+const $ = id => document.getElementById(id);
+const log = m => { const el = $("log"); el.textContent += "\n" + m; el.scrollTop = el.scrollHeight; };
+const isLive = CONFIG.deployed === true;
+
+const erc721Abi = parseAbi(["function balanceOf(address owner) view returns (uint256)"]);
+const attestorAbi = parseAbi([
+  "function attest(uint256 dayNumber, uint256 nonce, bytes signature)",
+  "function difficulty() view returns (uint256)",
+  "function lastDoneDay(address) view returns (uint256)",
+  "function streakOf(address) view returns (uint256)",
+  "function proofsOf(address) view returns (uint256)",
+  "function challengeOf(address user, uint256 dayNumber) pure returns (bytes32)",
+]);
+
+let wallet = null, publicClient = null, user = null, nonceSolution = null, typedSig = null, difficulty = CONFIG.difficulty;
+
+function todaysDayNumber() { return Math.floor(Date.now() / 86400000); }
+
+async function initPublic() {
+  publicClient = createPublicClient({ transport: http(CONFIG.rpc), chain: { id: CONFIG.chainId, name: "BNB Chain" } });
+  if (isLive) {
+    try {
+      const d = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "difficulty" });
+      difficulty = Number(d);
+      log("difficulty on-chain: " + difficulty);
+    } catch (e) { log("gagal baca difficulty, pakai " + difficulty + ": " + e.message); }
+  }
+}
+
+// ---------- PoW worker (inline via Blob) ----------
+const workerSrc = `
+import { keccak256, encodeAbiParameters } from "https://esm.sh/viem@2";
+let running = true;
+self.onmessage = async (e) => {
+  const { challengeHex, difficulty, startNonce } = e.data;
+  let nonce = BigInt(startNonce || 0), tries = 0;
+  running = true;
+  const t0 = Date.now();
+  while (running) {
+    const digest = keccak256(encodeAbiParameters([{type:"bytes32"},{type:"uint256"}], [challengeHex, nonce]));
+    // hitung leading zero bits
+    let v = BigInt(digest), n = 0;
+    if (v === 0n) n = 256; else { while ((v >> 255n) === 0n) { n++; v <<= 1n; } }
+    if (n >= difficulty) {
+      postMessage({ done: true, nonce: nonce.toString(), tries, ms: Date.now() - t0 });
+      return;
+    }
+    nonce++; tries++;
+    if (tries % 20000 === 0) postMessage({ done: false, nonce: nonce.toString(), tries, ms: Date.now() - t0 });
+    if (tries % 500 === 0) await new Promise(r => setTimeout(r, 0)); // beri kesempatan terminate
+  }
+};
+`;
+let worker = null;
+const workerUrl = URL.createObjectURL(new Blob([workerSrc], { type: "text/javascript" }));
+
+function startMining(challengeHex) {
+  if (worker) worker.terminate();
+  worker = new Worker(workerUrl, { type: "module" });
+  worker.onmessage = (e) => {
+    const { done, nonce, tries, ms } = e.data;
+    $("mineStatus").textContent = `nonce: ${nonce} · ${tries.toLocaleString()} percobaan · ${(ms/1000).toFixed(1)} dtk`;
+    if (done) {
+      nonceSolution = BigInt(nonce);
+      log("PoW selesai: nonce=" + nonce + " dalam " + (ms/1000).toFixed(1) + " dtk");
+      $("signBtn").disabled = false;
+      worker.terminate(); worker = null;
+    }
+  };
+  worker.postMessage({ challengeHex, difficulty, startNonce: 0 });
+}
+
+// ---------- event handlers ----------
+$("connectBtn").onclick = async () => {
+  if (!window.ethereum) { $("agentStatus").textContent = "Wallet tidak terdeteksi. Buka halaman ini di Binance App (Web3) atau browser dengan MetaMask/dll."; $("agentStatus").className = "status err"; return; }
+  wallet = createWalletClient({ transport: custom(window.ethereum), chain: { id: CONFIG.chainId, name: "BNB Chain" } });
+  [user] = await wallet.requestAddresses();
+  $("addrBox").textContent = "alamat: " + user;
+  $("agentStatus").textContent = "Terhubung. Sekarang cek Agent ID.";
+  $("checkBtn").disabled = false;
+  $("connectBtn").disabled = true;
+  log("terhubung: " + user);
+};
+
+$("checkBtn").onclick = async () => {
+  const bal = await publicClient.readContract({ address: CONFIG.agentId, abi: erc721Abi, functionName: "balanceOf", args: [user] });
+  const has = bal > 0n;
+  const badge = $("agentBadge");
+  badge.textContent = has ? "Agent ID: holder" : "Agent ID: bukan holder";
+  badge.className = "badge" + (has ? "" : " off");
+  if (!has) {
+    $("agentStatus").textContent = "Alamat ini belum punya Agent ID. Klaim di Binance App: Wallet > banner Agent ID, lalu cek lagi.";
+    $("agentStatus").className = "status err";
+    log("balanceOf = 0 -> bukan holder");
+    return;
+  }
+  $("agentStatus").textContent = "Agent ID terdeteksi. Lanjut ke langkah 2.";
+  $("agentStatus").className = "status ok";
+  const day = todaysDayNumber();
+  const ch = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "challengeOf", args: [user, BigInt(day)] }).catch(() => keccak256(encodeAbiParameters([{type:"address"},{type:"uint256"}], [user, BigInt(day)])));
+  $("challengeBox").textContent = `challenge (hari ${day}): ` + ch;
+  $("mineBtn").disabled = false;
+  $("mineBtn").dataset.challenge = ch;
+  log("challenge dihitung untuk hari " + day);
+  if (isLive) {
+    try {
+      const streak = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "streakOf", args: [user] });
+      const proofs = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "proofsOf", args: [user] });
+      const last = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "lastDoneDay", args: [user] });
+      $("statsBox").textContent = `streak: ${streak} · total proofs: ${proofs} · terakhir attest hari: ${last}`;
+    } catch (e) { log("gagal baca streak: " + e.message); }
+  }
+};
+
+$("mineBtn").onclick = () => {
+  const ch = $("mineBtn").dataset.challenge;
+  $("mineBtn").disabled = true; $("stopBtn").disabled = false;
+  log("mining mulai (difficulty " + difficulty + ")…");
+  startMining(ch);
+};
+
+$("stopBtn").onclick = () => {
+  if (worker) { worker.terminate(); worker = null; }
+  $("mineBtn").disabled = false; $("stopBtn").disabled = true;
+  log("mining dihentikan.");
+};
+
+$("signBtn").onclick = async () => {
+  const day = todaysDayNumber();
+  const domain = { name: "ProofofID", version: "1", chainId: CONFIG.chainId, verifyingContract: CONFIG.attestor };
+  const types = { Attest: [{ name: "user", type: "address" }, { name: "dayNumber", type: "uint256" }, { name: "nonce", type: "uint256" }, { name: "difficulty", type: "uint256" }] };
+  const message = { user, dayNumber: BigInt(day), nonce: nonceSolution, difficulty: BigInt(difficulty) };
+  typedSig = await wallet.signTypedData({ account: user, domain, types, primaryType: "Attest", message });
+  log("EIP-712 ditandatangani: " + typedSig.slice(0, 40) + "…");
+  $("submitBtn").disabled = false;
+};
+
+$("submitBtn").onclick = async () => {
+  if (!isLive) {
+    $("submitStatus").textContent = "Mode demo: alamat kontrak belum diisi. Setelah deploy, isi CONFIG.attestor di script ini, lalu tombol ini aktif.";
+    $("submitStatus").className = "status err";
+    log("demo mode: tx tidak dikirim");
+    return;
+  }
+  const day = todaysDayNumber();
+  $("submitStatus").textContent = "Mengirim transaksi… konfirmasi di wallet kamu.";
+  const hash = await wallet.writeContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "attest", args: [BigInt(day), nonceSolution, typedSig] });
+  log("tx: " + hash);
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  $("submitStatus").textContent = "Selesai. Tx: " + hash + " (status " + receipt.status + "). Lihat di BscScan.";
+  $("submitStatus").className = "status ok";
+  const streak = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "streakOf", args: [user] });
+  const proofs = await publicClient.readContract({ address: CONFIG.attestor, abi: attestorAbi, functionName: "proofsOf", args: [user] });
+  log(`streak: ${streak} · total proofs: ${proofs}`);
+  $("statsBox").textContent = `streak: ${streak} · total proofs: ${proofs} · terakhir attest hari: ${day}`;
+  $("bscBtn").href = CONFIG.bscscan + "/tx/" + hash;
+};
+
+$("copyBtn").onclick = async () => {
+  await navigator.clipboard.writeText(location.href);
+  $("shareStatus").textContent = "Tautan disalin.";
+};
+
+const shareText = encodeURIComponent("Bukti kerja di hari ini, terikat ke Agent ID saya. Tanpa token, tanpa janji cuan. Coba ProofofID:");
+$("xBtn").href = "https://x.com/intent/post?text=" + shareText + "&url=" + encodeURIComponent(location.href);
+$("bscBtn").href = isLive ? CONFIG.bscscan + "/address/" + CONFIG.attestor : "#";
+$("bscBtn").textContent = isLive ? "Lihat kontrak di BscScan" : "Kontrak: alamat belum diisi (demo)";
+
+initPublic();
+log(isLive ? "mode live: kontrak terhubung" : "mode demo: isi CONFIG.attestor setelah deploy");
+</script>
+</body>
+</html>
