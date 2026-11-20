@@ -8,7 +8,7 @@ Built for the Agent ID Hackathon (Binance Wallet x BNB Chain): https://www.binan
 
 - Terverifikasi: 14/14 unit test Foundry lolos (`forge test`), kontrak terkompilasi dengan solc 0.8.31, optimizer 200 runs, evm osaka.
 - Sudah dilakukan: deploy mainnet (ProofBadge `0x1c4c510B43Ef96189A4b0777202D1E85367Ba717`, PoWAttestor `0x80F0c0Dd369C073E8C780c55B7F86Cb622474992`), verifikasi BscScan (Sourcify exact_match + Etherscan V2 API confirmed), hosting GitHub Pages https://appleadlhapel.github.io/proofofid/, attest() live terbukti (badge #1 untuk argh.ai).
-- BELUM dilakukan: 30+ interaksi Agent ID, video demo, submit formulir.
+- BELUM dilakukan: 30+ interaksi Agent ID, submit formulir. Video demo sudah jadi (narrated walkthrough 1:59, file lokal `video/proofofid-demo.mp4` — upload ke YouTube/Drive untuk link publik). Badge image sudah live on-chain (tokenURI(1) aktif, setBaseURI tx `0xe73f778c9ca62ba75e8c6fa82c3efbd080c05d25b2601e26df2c589708e0e9a9`). Website sudah 4 bahasa (EN/RU/中文/ID).
 - Belum diaudit. Jangan sebut "audited"/"perfect". Ini draft yang sudah diuji unit test.
 - Detail lengkap: `docs/DEPLOY.md` (langkah ready-to-run) dan `docs/CHECKLIST.md`.
 
